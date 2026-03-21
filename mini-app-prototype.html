@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BreatheAI — прототип</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0f1117;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 48px;
+      padding: 32px;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 600;
+      color: #e8f5e9;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Круг дыхания ─────────────────────────────────────── */
+    .circle-container {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .circle-ring {
+      position: absolute;
+      width: 220px;
+      height: 220px;
+      border-radius: 20px;
+      border: 1.5px solid rgba(129, 199, 132, 0.6);
+    }
+
+
+    .circle {
+      width: 120px;
+      height: 120px;
+      border-radius: 18px;
+      background: radial-gradient(circle at 40% 35%, #81c784, #2e7d32);
+      box-shadow: 0 0 40px rgba(129, 199, 132, 0.4);
+      transition: transform 0s linear;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 500;
+      color: #e8f5e9;
+      letter-spacing: 0.3px;
+    }
+
+    /* ── Прогресс-бар ─────────────────────────────────────── */
+    .progress-track {
+      width: 100%;
+      max-width: 280px;
+      height: 4px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #2e7d32, #81c784);
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    /* ── Инфо ─────────────────────────────────────────────── */
+    .info {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .technique {
+      font-size: 16px;
+      font-weight: 600;
+      color: #a5d6a7;
+    }
+
+    .round-info {
+      font-size: 13px;
+      color: rgba(255,255,255,0.45);
+    }
+
+    /* ── Кнопки ───────────────────────────────────────────── */
+    .buttons {
+      display: flex;
+      gap: 12px;
+    }
+
+    button {
+      padding: 14px 28px;
+      border: none;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.1s;
+    }
+
+    button:active { transform: scale(0.96); }
+
+    .btn-start {
+      background: #2e7d32;
+      color: #e8f5e9;
+      box-shadow: 0 4px 20px rgba(46, 125, 50, 0.4);
+    }
+
+    .btn-stop {
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.6);
+    }
+
+    .btn-stop:disabled { opacity: 0.3; cursor: default; }
+
+    /* ── Выбор техники ────────────────────────────────────── */
+    .techniques {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      max-width: 320px;
+    }
+
+    .tech-chip {
+      padding: 8px 14px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      font-size: 13px;
+      color: rgba(255,255,255,0.7);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .tech-chip:hover, .tech-chip.active {
+      background: rgba(46, 125, 50, 0.3);
+      border-color: #2e7d32;
+      color: #a5d6a7;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🌿 BreatheAI</h1>
+
+  <!-- Выбор техники -->
+  <div class="techniques">
+    <div class="tech-chip active" onclick="selectTech(this, 4,4,4,4)">Box 4-4-4-4</div>
+    <div class="tech-chip" onclick="selectTech(this, 4,7,8,0)">4-7-8</div>
+    <div class="tech-chip" onclick="selectTech(this, 5,0,5,0)">Когерентное 5-5</div>
+    <div class="tech-chip" onclick="selectTech(this, 4,0,8,0)">Успокоение 4-8</div>
+  </div>
+
+  <!-- Круг -->
+  <div class="circle-container">
+    <div class="circle-ring"></div>
+<div class="circle" id="circle">Готов</div>
+  </div>
+
+  <!-- Прогресс -->
+  <div style="width:100%;max-width:280px;display:flex;flex-direction:column;gap:8px;align-items:center">
+    <div class="progress-track">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div class="info">
+      <div class="technique" id="techName">Box Breathing 4-4-4-4</div>
+      <div class="round-info" id="roundInfo">3 раунда</div>
+    </div>
+  </div>
+
+  <!-- Кнопки -->
+  <div class="buttons">
+    <button class="btn-start" id="btnStart" onclick="startSession()">▶ Начать</button>
+    <button class="btn-stop" id="btnStop" onclick="stopSession()" disabled>■ Стоп</button>
+  </div>
+
+<script>
+  // Текущая техника
+  let params = { inhale: 4, hold1: 4, exhale: 4, hold2: 4 };
+  let techLabel = "Box Breathing 4-4-4-4";
+  let running = false;
+  let timeoutId = null;
+
+  function selectTech(el, inhale, hold1, exhale, hold2) {
+    document.querySelectorAll('.tech-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    params = { inhale, hold1, exhale, hold2 };
+    techLabel = el.textContent;
+    document.getElementById('techName').textContent = techLabel;
+    if (!running) reset();
+  }
+
+  function reset() {
+    const circle = document.getElementById('circle');
+    circle.textContent = 'Готов';
+    circle.style.transform = 'scale(1)';
+    circle.style.transition = 'transform 0s';
+    document.getElementById('progressBar').style.width = '0%';
+    document.getElementById('roundInfo').textContent = '3 раунда';
+  }
+
+  async function startSession() {
+    if (running) return;
+    running = true;
+    document.getElementById('btnStart').disabled = true;
+    document.getElementById('btnStop').disabled = false;
+
+    const totalRounds = 3;
+    const circle = document.getElementById('circle');
+    const progressBar = document.getElementById('progressBar');
+    const roundInfo = document.getElementById('roundInfo');
+
+    // Считаем полное время для прогресс-бара
+    const phaseTime = (params.inhale + params.hold1 + params.exhale + params.hold2) * totalRounds;
+    let elapsed = 0;
+
+    for (let round = 1; round <= totalRounds && running; round++) {
+      roundInfo.textContent = `Раунд ${round} / ${totalRounds}`;
+
+      // Вдох
+      if (running && params.inhale > 0) {
+        circle.style.transition = `transform ${params.inhale}s ease-in-out`;
+        circle.style.transform = 'scale(1.5)';
+        await countdown(params.inhale);
+        elapsed += params.inhale;
+        progressBar.style.width = (elapsed / phaseTime * 100) + '%';
+      }
+
+      // Задержка вдоха
+      if (running && params.hold1 > 0) {
+        circle.style.transition = 'transform 0.3s';
+        await countdown(params.hold1);
+        elapsed += params.hold1;
+        progressBar.style.width = (elapsed / phaseTime * 100) + '%';
+      }
+
+      // Выдох
+      if (running && params.exhale > 0) {
+        circle.style.transition = `transform ${params.exhale}s ease-in-out`;
+        circle.style.transform = 'scale(1)';
+        await countdown(params.exhale);
+        elapsed += params.exhale;
+        progressBar.style.width = (elapsed / phaseTime * 100) + '%';
+      }
+
+      // Задержка выдоха
+      if (running && params.hold2 > 0) {
+        circle.style.transition = 'transform 0.3s';
+        await countdown(params.hold2);
+        elapsed += params.hold2;
+        progressBar.style.width = (elapsed / phaseTime * 100) + '%';
+      }
+    }
+
+    if (running) {
+      circle.textContent = '🌿';
+      circle.style.transition = 'transform 0.5s';
+      circle.style.transform = 'scale(1.1)';
+      roundInfo.textContent = 'Готово! Как ты?';
+      progressBar.style.width = '100%';
+      await sleep(1.5);
+      circle.style.transform = 'scale(1)';
+    }
+
+    stopSession();
+  }
+
+  function stopSession() {
+    running = false;
+    document.getElementById('btnStart').disabled = false;
+    document.getElementById('btnStop').disabled = true;
+    if (!document.getElementById('circle').textContent.includes('🌿')) {
+      reset();
+    }
+  }
+
+  // Обратный отсчёт внутри квадрата: 4, 3, 2, 1
+  function countdown(seconds) {
+    return new Promise(resolve => {
+      const circle = document.getElementById('circle');
+      let remaining = seconds;
+      circle.textContent = remaining;
+
+      const interval = setInterval(() => {
+        remaining--;
+        if (remaining <= 0) {
+          clearInterval(interval);
+          resolve();
+        } else {
+          circle.textContent = remaining;
+        }
+      }, 1000);
+
+      // Сохраняем interval для остановки
+      timeoutId = interval;
+    });
+  }
+
+  function sleep(seconds) {
+    return new Promise(resolve => {
+      timeoutId = setTimeout(resolve, seconds * 1000);
+    });
+  }
+</script>
+</body>
+</html>

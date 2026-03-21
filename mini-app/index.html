@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BreatheAI</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--tg-theme-bg-color, #0f1117);
+      color: var(--tg-theme-text-color, #fff);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      padding: 24px 20px;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 600;
+      color: #e8f5e9;
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: rgba(255,255,255,0.45);
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    /* ── Экраны ───────────────────────────────────────────── */
+    section { display: none; }
+    section.active { display: block; }
+
+    /* ── Экран 1: состояния ───────────────────────────────── */
+    .states-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .state-btn {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 16px 12px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.15s;
+      color: #fff;
+    }
+
+    .state-btn:active {
+      transform: scale(0.96);
+      background: rgba(46, 125, 50, 0.25);
+      border-color: #2e7d32;
+    }
+
+    .state-emoji { font-size: 28px; }
+    .state-text  { font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.8); }
+
+    /* ── Экран 2: сессия ──────────────────────────────────── */
+    #screen-session {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 32px;
+    }
+
+    #screen-session.active { display: flex; }
+
+    .back-btn {
+      align-self: flex-start;
+      background: none;
+      border: none;
+      color: #a5d6a7;
+      font-size: 15px;
+      cursor: pointer;
+      padding: 4px 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .technique-card {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .technique-name {
+      font-size: 18px;
+      font-weight: 700;
+      color: #a5d6a7;
+    }
+
+    .technique-params {
+      font-size: 13px;
+      color: rgba(255,255,255,0.4);
+    }
+
+    .technique-desc {
+      font-size: 14px;
+      color: rgba(255,255,255,0.65);
+      line-height: 1.5;
+      max-width: 280px;
+      margin-top: 4px;
+    }
+
+    /* ── Квадрат дыхания ──────────────────────────────────── */
+    .breath-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .phase-label {
+      font-size: 17px;
+      font-weight: 600;
+      color: #a5d6a7;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      min-height: 22px;
+    }
+
+    .square-container {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .square-ring {
+      position: absolute;
+      width: 220px;
+      height: 220px;
+      border-radius: 20px;
+      border: 1.5px solid rgba(129, 199, 132, 0.6);
+    }
+
+    .square {
+      width: 120px;
+      height: 120px;
+      border-radius: 18px;
+      background: radial-gradient(circle at 40% 35%, #81c784, #2e7d32);
+      box-shadow: 0 0 40px rgba(129, 199, 132, 0.4);
+      transition: transform 0s linear;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      font-weight: 700;
+      color: #e8f5e9;
+    }
+
+    .finish-msg {
+      font-size: 15px;
+      color: #a5d6a7;
+      min-height: 20px;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    .finish-msg.visible { opacity: 1; }
+
+    /* ── Прогресс ─────────────────────────────────────────── */
+    .progress-wrap {
+      width: 100%;
+      max-width: 280px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 4px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #2e7d32, #81c784);
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .round-info {
+      font-size: 13px;
+      color: rgba(255,255,255,0.4);
+    }
+
+    /* ── Кнопки ───────────────────────────────────────────── */
+    .buttons { display: flex; gap: 12px; }
+
+    button.btn-primary, button.btn-secondary {
+      padding: 14px 28px;
+      border: none;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    button:active { transform: scale(0.96); }
+
+    .btn-primary {
+      background: #2e7d32;
+      color: #e8f5e9;
+      box-shadow: 0 4px 20px rgba(46, 125, 50, 0.4);
+    }
+
+    .btn-primary:disabled { opacity: 0.4; cursor: default; }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.6);
+    }
+
+    .btn-secondary:disabled { opacity: 0.3; cursor: default; }
+  </style>
+</head>
+<body>
+
+  <!-- ── Экран 1: выбор состояния ───────────────────────── -->
+  <section id="screen-states" class="active">
+    <h1>🌿 BreatheAI</h1>
+    <p class="subtitle">Как себя чувствуешь?</p>
+    <div class="states-grid">
+      <button class="state-btn" onclick="selectState('anxiety_mild')">
+        <span class="state-emoji">😰</span>
+        <span class="state-text">Тревога</span>
+      </button>
+      <button class="state-btn" onclick="selectState('stress_general')">
+        <span class="state-emoji">😤</span>
+        <span class="state-text">Стресс</span>
+      </button>
+      <button class="state-btn" onclick="selectState('sleep_cant')">
+        <span class="state-emoji">😴</span>
+        <span class="state-text">Не могу уснуть</span>
+      </button>
+      <button class="state-btn" onclick="selectState('anger')">
+        <span class="state-emoji">😠</span>
+        <span class="state-text">Злость</span>
+      </button>
+      <button class="state-btn" onclick="selectState('relax_simple')">
+        <span class="state-emoji">😮‍💨</span>
+        <span class="state-text">Просто подышать</span>
+      </button>
+      <button class="state-btn" onclick="selectState('focus')">
+        <span class="state-emoji">🎯</span>
+        <span class="state-text">Концентрация</span>
+      </button>
+      <button class="state-btn" onclick="selectState('overwhelm')">
+        <span class="state-emoji">😵</span>
+        <span class="state-text">Перегруз</span>
+      </button>
+      <button class="state-btn" onclick="selectState('bedtime')">
+        <span class="state-emoji">🌙</span>
+        <span class="state-text">Перед сном</span>
+      </button>
+      <button class="state-btn" onclick="selectState('feeling_good')">
+        <span class="state-emoji">😊</span>
+        <span class="state-text">Всё хорошо</span>
+      </button>
+      <button class="state-btn" onclick="selectState('morning_good')">
+        <span class="state-emoji">☀️</span>
+        <span class="state-text">Доброе утро</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ── Экран 2: сессия дыхания ─────────────────────────── -->
+  <section id="screen-session">
+    <button class="back-btn" onclick="goBack()">← Назад</button>
+
+    <div class="technique-card">
+      <div class="technique-name" id="techName"></div>
+      <div class="technique-params" id="techParams"></div>
+      <div class="technique-desc" id="techDesc"></div>
+    </div>
+
+    <div class="breath-block">
+      <div class="phase-label" id="phaseLabel">&nbsp;</div>
+      <div class="square-container">
+        <div class="square-ring"></div>
+        <div class="square" id="square">·</div>
+      </div>
+      <div class="finish-msg" id="finishMsg"></div>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-track">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <div class="round-info" id="roundInfo">3 раунда</div>
+    </div>
+
+    <div class="buttons">
+      <button class="btn-primary" id="btnStart" onclick="startSession()">▶ Начать</button>
+      <button class="btn-secondary" id="btnStop" onclick="stopSession()" disabled>■ Стоп</button>
+    </div>
+  </section>
+
+<script>
+  const tg = window.Telegram?.WebApp;
+  if (tg) tg.ready();
+
+  // Матрица состояний (из responses.ts)
+  const STATES = {
+    anxiety_mild: {
+      technique: 'Квадратное дыхание',
+      params: { inhale:4, hold1:4, exhale:4, hold2:4 },
+      desc: 'Одинаковые фазы по 4 секунды создают баланс нервной системы.',
+    },
+    stress_general: {
+      technique: 'Квадратное дыхание',
+      params: { inhale:4, hold1:4, exhale:4, hold2:4 },
+      desc: 'Базовая техника сброса напряжения, работает при любом виде стресса.',
+    },
+    sleep_cant: {
+      technique: 'Дыхание 4-7-8',
+      params: { inhale:4, hold1:7, exhale:8, hold2:0 },
+      desc: 'Задержка на 7 секунд насыщает кровь кислородом и успокаивает ум.',
+    },
+    anger: {
+      technique: 'Охлаждающее дыхание',
+      params: { inhale:4, hold1:0, exhale:8, hold2:0 },
+      desc: 'Длинный выдох — физиологический тормоз для злости.',
+    },
+    relax_simple: {
+      technique: 'Когерентное дыхание',
+      params: { inhale:5, hold1:0, exhale:5, hold2:0 },
+      desc: 'Золотой стандарт для поддержания баланса, используется в HRV-тренинге.',
+    },
+    focus: {
+      technique: 'Нейтральное дыхание 4-4-4',
+      params: { inhale:4, hold1:4, exhale:4, hold2:0 },
+      desc: 'Самый быстрый путь в состояние альфа — для медитации и сложной работы.',
+    },
+    overwhelm: {
+      technique: 'Квадратное дыхание',
+      params: { inhale:4, hold1:4, exhale:4, hold2:4 },
+      desc: 'Перезагружает мозг за 90 секунд. Сначала дыши, потом планируй.',
+    },
+    bedtime: {
+      technique: 'Ритуал засыпания 4-7-8',
+      params: { inhale:4, hold1:7, exhale:8, hold2:0 },
+      desc: 'Снижает кортизол и готовит тело ко сну. 4-8 циклов в постели.',
+    },
+    feeling_good: {
+      technique: 'Когерентное дыхание',
+      params: { inhale:5, hold1:0, exhale:5, hold2:0 },
+      desc: 'В позитивном состоянии дыхание "прошивает" ресурс в тело — закрепи его.',
+    },
+    morning_good: {
+      technique: 'Утреннее дыхание',
+      params: { inhale:4, hold1:4, exhale:4, hold2:0 },
+      desc: '3 минуты утром — и продуктивность на несколько часов вперёд.',
+    },
+  };
+
+  let currentParams = null;
+  let running = false;
+  let activeInterval = null;
+
+  function vibrate(style = 'light') {
+    tg?.HapticFeedback?.impactOccurred(style);
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  function selectState(stateId) {
+    vibrate('light');
+    const state = STATES[stateId];
+    currentParams = state.params;
+
+    // Заполняем экран сессии
+    const p = state.params;
+    document.getElementById('techName').textContent = state.technique;
+    document.getElementById('techParams').textContent =
+      `${p.inhale} — ${p.hold1} — ${p.exhale} — ${p.hold2}`;
+    document.getElementById('techDesc').textContent = state.desc;
+
+    resetSession();
+    showScreen('screen-session');
+  }
+
+  function goBack() {
+    stopSession();
+    showScreen('screen-states');
+  }
+
+  function resetSession() {
+    const square = document.getElementById('square');
+    square.textContent = '·';
+    square.style.transform = 'scale(1)';
+    square.style.transition = 'transform 0s';
+    document.getElementById('phaseLabel').innerHTML = '&nbsp;';
+    document.getElementById('progressBar').style.width = '0%';
+    document.getElementById('roundInfo').textContent = '3 раунда';
+    const msg = document.getElementById('finishMsg');
+    msg.textContent = '';
+    msg.classList.remove('visible');
+    document.getElementById('btnStart').disabled = false;
+    document.getElementById('btnStop').disabled = true;
+  }
+
+  async function startSession() {
+    if (running || !currentParams) return;
+    running = true;
+    document.getElementById('btnStart').disabled = true;
+    document.getElementById('btnStop').disabled = false;
+    document.getElementById('finishMsg').classList.remove('visible');
+
+    const params = currentParams;
+    const totalRounds = 3;
+    const square = document.getElementById('square');
+    const progressBar = document.getElementById('progressBar');
+    const roundInfo = document.getElementById('roundInfo');
+    const phaseTime = (params.inhale + params.hold1 + params.exhale + params.hold2) * totalRounds;
+    let elapsed = 0;
+
+    for (let round = 1; round <= totalRounds && running; round++) {
+      roundInfo.textContent = `Раунд ${round} / ${totalRounds}`;
+
+      // Вдох
+      if (running && params.inhale > 0) {
+        vibrate('medium');
+        document.getElementById('phaseLabel').textContent = 'Вдох';
+        square.style.transition = `transform ${params.inhale}s ease-in-out`;
+        square.style.transform = 'scale(1.5)';
+        await countdown(params.inhale);
+        elapsed += params.inhale;
+        progressBar.style.width = (elapsed / phaseTime * 100) + '%';
+      }
+
+      // Задержка вдоха
+      if (running && params.hold1 > 0) {
+        vibrate('light');
+        document.getElementById('phaseLabel').textContent = 'Задержка';
+        square.style.transition = 'transform 0.3s';
+        await countdown(params.hold1);
+        elapsed += params.hold1;
+        progressBar.style.width = (elapsed / phaseTime * 100) + '%';
+      }
+
+      // Выдох
+      if (running && params.exhale > 0) {
+        vibrate('medium');
+        document.getElementById('phaseLabel').textContent = 'Выдох';
+        square.style.transition = `transform ${params.exhale}s ease-in-out`;
+        square.style.transform = 'scale(1)';
+        await countdown(params.exhale);
+        elapsed += params.exhale;
+        progressBar.style.width = (elapsed / phaseTime * 100) + '%';
+      }
+
+      // Задержка выдоха
+      if (running && params.hold2 > 0) {
+        vibrate('light');
+        document.getElementById('phaseLabel').textContent = 'Пауза';
+        square.style.transition = 'transform 0.3s';
+        await countdown(params.hold2);
+        elapsed += params.hold2;
+        progressBar.style.width = (elapsed / phaseTime * 100) + '%';
+      }
+    }
+
+    if (running) {
+      vibrate('heavy');
+      document.getElementById('phaseLabel').innerHTML = '&nbsp;';
+      square.textContent = '🌿';
+      square.style.transition = 'transform 0.5s';
+      square.style.transform = 'scale(1.1)';
+      progressBar.style.width = '100%';
+      roundInfo.textContent = 'Готово!';
+      const msg = document.getElementById('finishMsg');
+      msg.textContent = 'Как ты сейчас? 🌿';
+      msg.classList.add('visible');
+      await sleep(1.5);
+      square.style.transform = 'scale(1)';
+    }
+
+    stopSession();
+  }
+
+  function stopSession() {
+    running = false;
+    if (activeInterval) clearInterval(activeInterval);
+    document.getElementById('btnStart').disabled = false;
+    document.getElementById('btnStop').disabled = true;
+    const square = document.getElementById('square');
+    if (!square.textContent.includes('🌿')) resetSession();
+  }
+
+  function countdown(seconds) {
+    return new Promise(resolve => {
+      const square = document.getElementById('square');
+      let remaining = seconds;
+      square.textContent = remaining;
+      activeInterval = setInterval(() => {
+        if (!running) { clearInterval(activeInterval); resolve(); return; }
+        remaining--;
+        if (remaining <= 0) { clearInterval(activeInterval); resolve(); }
+        else square.textContent = remaining;
+      }, 1000);
+    });
+  }
+
+  function sleep(seconds) {
+    return new Promise(resolve => setTimeout(resolve, seconds * 1000));
+  }
+</script>
+</body>
+</html>
