@@ -37,6 +37,6 @@
 - [ ] Передача выбранной техники из бота в Mini App (через startParam)
 
 ### Деплой
-- [ ] Задеплоить Mini App на Vercel
-- [ ] Задеплоить бота на Railway
-- [ ] Подключить Mini App к боту через BotFather
+- [x] Задеплоить Mini App на Vercel → https://breathe-ai-mini-app.vercel.app
+- [x] Задеплоить бота на Railway → https://github.com/passageofarms2017-star/breathe-ai
+- [x] Подключить Mini App к боту через BotFather (Menu Button)
