@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "hello": "tsx src/hello-claude.ts",
+    "streaming": "tsx src/streaming.ts",
     "chat": "tsx src/chat.ts",
     "bot": "tsx src/bot.ts",
     "start": "tsx src/bot.ts",

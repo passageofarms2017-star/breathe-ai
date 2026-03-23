@@ -1,0 +1,7 @@
+node_modules/
+dist/
+*.log
+coverage/
+package-lock.json
+npm/
+mini-app/node_modules/
