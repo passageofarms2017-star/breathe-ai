@@ -326,7 +326,7 @@
     <div class="buttons">
       <button class="btn-primary" id="btnStart" onclick="startSession()">▶ Начать</button>
       <button class="btn-secondary" id="btnStop" onclick="stopSession()" disabled>■ Стоп</button>
-      <button class="btn-mute" id="btnMute" onclick="toggleMute()">🔊</button>
+      <button class="btn-mute muted" id="btnMute" onclick="toggleMute()">🔇</button>
     </div>
   </section>
 
@@ -424,7 +424,7 @@
   let currentParams = null;
   let running = false;
   let activeInterval = null;
-  let muted = false;
+  let muted = true;
 
   function toggleMute() {
     muted = !muted;
