@@ -233,6 +233,18 @@
     }
 
     .btn-secondary:disabled { opacity: 0.3; cursor: default; }
+
+    .btn-mute {
+      background: rgba(128,128,128,0.15);
+      color: var(--tg-theme-hint-color, rgba(255,255,255,0.5));
+      border: none;
+      border-radius: 14px;
+      padding: 14px 16px;
+      font-size: 18px;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+    .btn-mute.muted { color: #ef9a9a; }
   </style>
 </head>
 <body>
@@ -314,6 +326,7 @@
     <div class="buttons">
       <button class="btn-primary" id="btnStart" onclick="startSession()">▶ Начать</button>
       <button class="btn-secondary" id="btnStop" onclick="stopSession()" disabled>■ Стоп</button>
+      <button class="btn-mute" id="btnMute" onclick="toggleMute()">🔊</button>
     </div>
   </section>
 
@@ -326,6 +339,7 @@
 
   // Тихий тик на каждую секунду (короткий высокий тон)
   function playTick() {
+    if (muted) return;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.connect(gain);
@@ -340,6 +354,7 @@
 
   // Мягкий сигнал смены фазы (низкий тон чуть длиннее)
   function playPhase() {
+    if (muted) return;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.connect(gain);
@@ -409,6 +424,15 @@
   let currentParams = null;
   let running = false;
   let activeInterval = null;
+  let muted = false;
+
+  function toggleMute() {
+    muted = !muted;
+    const btn = document.getElementById('btnMute');
+    btn.textContent = muted ? '🔇' : '🔊';
+    btn.classList.toggle('muted', muted);
+    vibrate('light');
+  }
 
   function vibrate(style = 'light') {
     tg?.HapticFeedback?.impactOccurred(style);
