@@ -5,3 +5,14 @@ coverage/
 package-lock.json
 npm/
 mini-app/node_modules/
+
+# Секреты
+.env
+.env.local
+.env.production
+
+# Vercel артефакты (не нужны при разработке)
+mini-app/.vercel/
+
+# Кэш TypeScript
+*.tsbuildinfo

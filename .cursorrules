@@ -1,0 +1,48 @@
+# BreatheAI — Cursor Rules
+
+## Проект
+Telegram-бот, AI-коуч по дыхательным практикам.
+Стек: Node.js, TypeScript, Grammy, @anthropic-ai/sdk, ioredis (Redis).
+
+## Структура
+- bot.ts — точка входа, все Telegram handlers
+- history.ts — Redis-история per userId (TTL 7 дней, лимит 20 сообщений)
+- responses.ts — матрица StateVariant: 20+ состояний с техниками
+- state-detector.ts — детект состояния по ключевым словам
+- faq.ts — статические ответы (без API)
+- breathing-session.ts — ASCII-анимация, editMessageText каждую секунду
+
+## Роутинг сообщений (НЕ МЕНЯТЬ порядок)
+1. state-detector → ключевые слова → static response
+2. faq → частые вопросы → static response
+3. Claude API → fallback
+
+## TypeScript
+- strict mode, никакого `any`
+- явные типы у всех функций: параметры + return type
+- async/await везде — никаких `.then()`
+- импорты с явными типами: `import type { ... }`
+
+## Claude API
+- модель: claude-sonnet-4-6
+- max_tokens: не более 1024 для чат-ответов
+- системный промпт: на русском, краткий, ролевой
+- история: через history.ts (Redis)
+
+## Grammy (Telegram)
+- всегда `ctx.replyWithChatAction("typing")` перед Claude API
+- try/catch на всех handlers, пользователь получает понятное сообщение
+- userId через `ctx.from?.id.toString()`
+
+## Стиль кода
+- комментарии на русском языке
+- файлы до 150 строк, одна ответственность
+- secrets только через process.env
+- без console.log в продовом коде — только console.error для ошибок
+
+## НЕ ДЕЛАТЬ
+- не предлагать Python
+- не рефакторить StateVariant и breathing-session.ts без явной просьбы
+- не менять порядок роутинга
+- не добавлять фичи которые не просили
+- не усложнять архитектуру раньше времени
