@@ -321,6 +321,37 @@
   const tg = window.Telegram?.WebApp;
   if (tg) tg.ready();
 
+  // Web Audio API — генерируем звуки без файлов
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  // Тихий тик на каждую секунду (короткий высокий тон)
+  function playTick() {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.frequency.value = 880;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.08);
+  }
+
+  // Мягкий сигнал смены фазы (низкий тон чуть длиннее)
+  function playPhase() {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.frequency.value = 440;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.35);
+  }
+
   // Матрица состояний (из responses.ts)
   const STATES = {
     anxiety_mild: {
@@ -426,6 +457,7 @@
 
   async function startSession() {
     if (running || !currentParams) return;
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
     running = true;
     document.getElementById('btnStart').disabled = true;
     document.getElementById('btnStop').disabled = false;
@@ -444,7 +476,7 @@
 
       // Вдох
       if (running && params.inhale > 0) {
-        vibrate('medium');
+        vibrate('medium'); playPhase();
         document.getElementById('phaseLabel').textContent = 'Вдох';
         square.style.transition = `transform ${params.inhale}s ease-in-out`;
         square.style.transform = 'scale(1.5)';
@@ -455,7 +487,7 @@
 
       // Задержка вдоха
       if (running && params.hold1 > 0) {
-        vibrate('light');
+        vibrate('light'); playPhase();
         document.getElementById('phaseLabel').textContent = 'Задержка';
         square.style.transition = 'transform 0.3s';
         await countdown(params.hold1);
@@ -465,7 +497,7 @@
 
       // Выдох
       if (running && params.exhale > 0) {
-        vibrate('medium');
+        vibrate('medium'); playPhase();
         document.getElementById('phaseLabel').textContent = 'Выдох';
         square.style.transition = `transform ${params.exhale}s ease-in-out`;
         square.style.transform = 'scale(1)';
@@ -476,7 +508,7 @@
 
       // Задержка выдоха
       if (running && params.hold2 > 0) {
-        vibrate('light');
+        vibrate('light'); playPhase();
         document.getElementById('phaseLabel').textContent = 'Пауза';
         square.style.transition = 'transform 0.3s';
         await countdown(params.hold2);
@@ -521,7 +553,7 @@
         if (!running) { clearInterval(activeInterval); resolve(); return; }
         remaining--;
         if (remaining <= 0) { clearInterval(activeInterval); resolve(); }
-        else square.textContent = remaining;
+        else { square.textContent = remaining; playTick(); }
       }, 1000);
     });
   }
