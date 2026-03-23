@@ -94,8 +94,8 @@ bot.command("breathe", async (ctx: Context) => {
   const followUp = variant?.followUp;
   const label = variant ? `Техника: ${variant.technique}` : "Box Breathing 4-4-4-4";
 
-  await ctx.reply(`Начинаем сессию дыхания 🌿\n${label}\n3 раунда — следи за кружочком...`);
-  await startBreathingSession(bot.api, ctx.chat.id, 3, params, followUp);
+  await ctx.reply(`Начинаем сессию дыхания 🌿\n${label}\n10 раундов — следи за кружочком...`);
+  await startBreathingSession(bot.api, ctx.chat.id, 10, params, followUp);
 });
 
 // /help
@@ -144,8 +144,8 @@ bot.callbackQuery(/^breathe:(.+)$/, async (ctx) => {
 
   if (!variant) return;
 
-  await ctx.reply(`Начинаем: ${variant.technique} 🌿\n3 раунда — следи за кружочком...`);
-  await startBreathingSession(bot.api, ctx.chat.id, 3, variant.breathingParams, variant.followUp);
+  await ctx.reply(`Начинаем: ${variant.technique} 🌿\n10 раундов — следи за кружочком...`);
+  await startBreathingSession(bot.api, ctx.chat.id, 10, variant.breathingParams, variant.followUp);
 });
 
 // Свободный текст — сначала матрица, потом Claude
