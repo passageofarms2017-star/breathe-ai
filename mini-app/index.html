@@ -308,7 +308,7 @@
       <div class="progress-track">
         <div class="progress-bar" id="progressBar"></div>
       </div>
-      <div class="round-info" id="roundInfo">3 раунда</div>
+      <div class="round-info" id="roundInfo">10 раундов</div>
     </div>
 
     <div class="buttons">
@@ -416,7 +416,7 @@
     square.style.transition = 'transform 0s';
     document.getElementById('phaseLabel').innerHTML = '&nbsp;';
     document.getElementById('progressBar').style.width = '0%';
-    document.getElementById('roundInfo').textContent = '3 раунда';
+    document.getElementById('roundInfo').textContent = '10 раундов';
     const msg = document.getElementById('finishMsg');
     msg.textContent = '';
     msg.classList.remove('visible');
@@ -432,7 +432,7 @@
     document.getElementById('finishMsg').classList.remove('visible');
 
     const params = currentParams;
-    const totalRounds = 3;
+    const totalRounds = 10;
     const square = document.getElementById('square');
     const progressBar = document.getElementById('progressBar');
     const roundInfo = document.getElementById('roundInfo');
